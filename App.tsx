@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { AppProvider } from './src/utils/AppContext';
 import MainTabs from './src/navigation/MainTabs';
-import ProximityPingScreen from './src/screens/ProximityPingScreen';
+import GeomatchDetailScreen from './src/screens/GeomatchDetailScreen';
 import { RootStackParamList } from './src/navigation/types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -15,7 +15,7 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Main" component={MainTabs} />
-          <Stack.Screen name="ProximityPing" component={ProximityPingScreen} />
+          <Stack.Screen name="GeomatchDetail" component={GeomatchDetailScreen} />
         </Stack.Navigator>
         <StatusBar style="light" />
       </NavigationContainer>

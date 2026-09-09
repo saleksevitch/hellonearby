@@ -1,12 +1,10 @@
-import { Match } from '../types';
-
 export type RootStackParamList = {
   Main: undefined;
-  ProximityPing: { match: Match };
+  GeomatchDetail: { geomatchUserId: string };
 };
 
 export type MainTabParamList = {
   Profile: undefined;
-  Swipe: undefined;
-  Matches: undefined;
+  Radar: undefined;
+  Geomatches: undefined;
 };

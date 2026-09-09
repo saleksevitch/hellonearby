@@ -11,7 +11,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useApp } from '../utils/AppContext';
-import { Match } from '../types';
+import { Geomatch } from '../types';
 import { APP_CONFIG } from '../utils/config';
 import { RootStackParamList } from '../navigation/types';
 
@@ -19,10 +19,10 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export default function MatchesScreen() {
   const navigation = useNavigation<NavigationProp>();
-  const { matches, blockUser } = useApp();
+  const { geomatches, blockUser } = useApp();
 
-  const handleMatchPress = (match: Match) => {
-    navigation.navigate('ProximityPing', { match });
+  const handleGeomatchPress = (geomatch: Geomatch) => {
+    navigation.navigate('GeomatchDetail', { geomatchUserId: geomatch.userId });
   };
 
   const handleBlockUser = (userId: string, userName: string) => {
@@ -43,16 +43,17 @@ export default function MatchesScreen() {
     );
   };
 
-  const renderMatch = ({ item }: { item: Match }) => {
-    const isNearby = (item.user.distance || 0) <= APP_CONFIG.proximityThreshold;
+  const renderGeomatch = ({ item }: { item: Geomatch }) => {
+    const isInRange = (item.user.distance || 0) <= APP_CONFIG.proximityThreshold;
+    const isEphemeral = item.isEphemeral && !isInRange;
     const daysAgo = Math.floor(
-      (Date.now() - new Date(item.matchedAt).getTime()) / (1000 * 60 * 60 * 24)
+      (Date.now() - new Date(item.caughtAt).getTime()) / (1000 * 60 * 60 * 24)
     );
 
     return (
       <TouchableOpacity
         style={styles.matchCard}
-        onPress={() => handleMatchPress(item)}
+        onPress={() => handleGeomatchPress(item)}
       >
         <Image source={{ uri: item.user.photoUrl }} style={styles.matchPhoto} />
         <View style={styles.matchInfo}>
@@ -60,13 +61,17 @@ export default function MatchesScreen() {
           <Text style={styles.matchDistance}>
             ~{Math.round(item.user.distance || 0)}m away
           </Text>
-          {isNearby ? (
+          {isEphemeral ? (
+            <View style={[styles.badge, styles.badgeVanished]}>
+              <Text style={styles.badgeText}>👻 Out of range</Text>
+            </View>
+          ) : isInRange ? (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>📍 Nearby - Tap to ping!</Text>
+              <Text style={styles.badgeText}>📍 In range!</Text>
             </View>
           ) : (
             <Text style={styles.matchStatus}>
-              Match • {daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}
+              Caught • {daysAgo === 0 ? 'Today' : `${daysAgo}d ago`}
             </Text>
           )}
         </View>
@@ -80,17 +85,17 @@ export default function MatchesScreen() {
     );
   };
 
-  if (matches.length === 0) {
+  if (geomatches.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Matches</Text>
+          <Text style={styles.title}>Geomatches</Text>
         </View>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyEmoji}>💫</Text>
-          <Text style={styles.emptyText}>No matches yet!</Text>
+          <Text style={styles.emptyEmoji}>✨</Text>
+          <Text style={styles.emptyText}>No geomatches yet!</Text>
           <Text style={styles.emptySubtext}>
-            Start swiping to find your matches
+            Head to Radar to catch people nearby
           </Text>
         </View>
       </View>
@@ -100,21 +105,20 @@ export default function MatchesScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Matches</Text>
-        <Text style={styles.subtitle}>{matches.length} mutual matches</Text>
+        <Text style={styles.title}>Geomatches</Text>
+        <Text style={styles.subtitle}>{geomatches.length} caught</Text>
       </View>
 
       <FlatList
-        data={matches}
-        renderItem={renderMatch}
+        data={geomatches}
+        renderItem={renderGeomatch}
         keyExtractor={(item) => item.userId}
         contentContainerStyle={styles.listContent}
       />
 
       <View style={styles.infoBox}>
         <Text style={styles.infoText}>
-          🎯 Get within {APP_CONFIG.proximityThresholdDisplay} of a match to
-          unlock ping & photo for an IRL hello!
+          ✨ Ephemeral geomatches vanish when out of range. Get close to reconnect!
         </Text>
       </View>
     </View>
@@ -186,6 +190,9 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 12,
     alignSelf: 'flex-start',
+  },
+  badgeVanished: {
+    backgroundColor: '#666',
   },
   badgeText: {
     fontSize: 12,
