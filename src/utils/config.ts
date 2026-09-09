@@ -3,6 +3,7 @@ export const APP_CONFIG = {
   appName: 'HelloNearby',
   proximityThreshold: 500, // meters - mocked for v1
   proximityThresholdDisplay: '~500m',
-  freeGeomatchesPerWeek: 1,
-  paidGeomatchesPerWeek: 5,
+  geomatchesPerWeek: 5, // paid-only membership
+  weeklySubscriptionPrice: '$29.99', // mock pricing
+  monthlySubscriptionPrice: '$99.99', // mock pricing
 };

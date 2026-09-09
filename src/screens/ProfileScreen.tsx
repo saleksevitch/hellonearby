@@ -27,7 +27,7 @@ const ETHNICITY_OPTIONS: Ethnicity[] = [
 ];
 
 export default function ProfileScreen() {
-  const { profile, updateProfile, isPaid, setIsPaid, quota, resetQuota } = useApp();
+  const { profile, updateProfile, quota, resetQuota, applicationData, setApplicationStatus, simulateLastActive } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [tempProfile, setTempProfile] = useState(profile);
 
@@ -43,20 +43,13 @@ export default function ProfileScreen() {
   };
 
   const toggleGenderPreference = (gender: Gender) => {
-    const current = tempProfile.preferences.genders;
-    const updated = current.includes(gender)
-      ? current.filter((g) => g !== gender)
-      : [...current, gender];
-    
-    if (updated.length === 0) {
-      Alert.alert('Filter Required', 'You must select at least one gender preference.');
-      return;
-    }
-
-    setTempProfile({
-      ...tempProfile,
-      preferences: { ...tempProfile.preferences, genders: updated },
-    });
+    // v1: heterosexual only - fixed based on user gender
+    // Man seeks Woman, Woman seeks Man
+    Alert.alert(
+      'Gender Preference',
+      'HelloNearby v1 supports heterosexual couples. Your gender preference is set based on your gender.',
+      [{ text: 'OK' }]
+    );
   };
 
   const toggleEthnicityPreference = (ethnicity: Ethnicity) => {
@@ -99,24 +92,56 @@ export default function ProfileScreen() {
             </Text>
           </View>
           <View style={styles.statusRow}>
-            <Text style={styles.statusLabel}>Status</Text>
+            <Text style={styles.statusLabel}>Membership</Text>
             <View style={styles.statusBadge}>
               <Text style={styles.statusText}>
-                {isPaid ? '💎 Paid (5/week)' : '⭐ Free (1/week)'}
+                💎 Paid (5/week)
               </Text>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.togglePaidButton}
-            onPress={() => setIsPaid(!isPaid)}
-          >
-            <Text style={styles.togglePaidText}>
-              {isPaid ? 'Switch to Free (Demo)' : 'Switch to Paid (Demo)'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.resetButton} onPress={resetQuota}>
-            <Text style={styles.resetButtonText}>Reset Quota (Testing)</Text>
-          </TouchableOpacity>
+          
+          {/* Demo Controls */}
+          <View style={styles.demoSection}>
+            <Text style={styles.demoLabel}>🛠️ Demo Controls</Text>
+            <TouchableOpacity style={styles.demoButton} onPress={resetQuota}>
+              <Text style={styles.demoButtonText}>Reset Weekly Quota</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.demoButton} 
+              onPress={() => {
+                Alert.alert(
+                  'Simulate Inactivity',
+                  'Set last active date:',
+                  [
+                    { text: 'Today', onPress: () => simulateLastActive(0) },
+                    { text: '10 days ago', onPress: () => simulateLastActive(10) },
+                    { text: '15 days ago (warning)', onPress: () => simulateLastActive(15) },
+                    { text: '22 days ago (release seat)', onPress: () => simulateLastActive(22) },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.demoButtonText}>Simulate Inactivity</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.demoButton} 
+              onPress={() => {
+                Alert.alert(
+                  'Change Application Status',
+                  'Demo only - change status:',
+                  [
+                    { text: 'Approved', onPress: () => setApplicationStatus('approved') },
+                    { text: 'Waitlisted', onPress: () => setApplicationStatus('waitlisted') },
+                    { text: 'Under Review', onPress: () => setApplicationStatus('under_review') },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]
+                );
+              }}
+            >
+              <Text style={styles.demoButtonText}>Change Status (Demo)</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Photo */}
@@ -320,28 +345,15 @@ export default function ProfileScreen() {
 
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Who I Want to Meet</Text>
+                  <Text style={styles.v1Note}>
+                    v1 supports heterosexual couples: {tempProfile.gender === 'man' ? 'Men seek Women' : 'Women seek Men'}
+                  </Text>
                   <View style={styles.chipContainer}>
-                    {GENDER_OPTIONS.map((gender) => (
-                      <TouchableOpacity
-                        key={gender}
-                        style={[
-                          styles.chip,
-                          tempProfile.preferences.genders.includes(gender) &&
-                            styles.chipSelected,
-                        ]}
-                        onPress={() => toggleGenderPreference(gender)}
-                      >
-                        <Text
-                          style={[
-                            styles.chipText,
-                            tempProfile.preferences.genders.includes(gender) &&
-                              styles.chipTextSelected,
-                          ]}
-                        >
-                          {formatGender(gender)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                    <View style={[styles.chip, styles.chipSelected]}>
+                      <Text style={[styles.chipText, styles.chipTextSelected]}>
+                        {tempProfile.gender === 'man' ? 'Woman' : 'Man'}
+                      </Text>
+                    </View>
                   </View>
                 </View>
 
@@ -458,7 +470,7 @@ export default function ProfileScreen() {
                   {profile.preferences.ageRange[1]}
                 </Text>
                 <Text style={styles.filterText}>
-                  • Meet: {profile.preferences.genders.map(formatGender).join(', ')}
+                  • Meet: {profile.gender === 'man' ? 'Women' : 'Men'} (v1: heterosexual)
                 </Text>
                 <Text style={styles.filterText}>
                   • Height: {profile.preferences.heightRange[0]}-
@@ -491,7 +503,7 @@ export default function ProfileScreen() {
             1. Turn on discoverable to appear on radar{'\n'}
             2. Set your filters (two-way matching){'\n'}
             3. Catch people in range ({APP_CONFIG.proximityThresholdDisplay}){'\n'}
-            4. Use your {isPaid ? '5' : '1'} geomatch{isPaid ? 'es' : ''} per week wisely!{'\n'}
+            4. Use your 5 geomatches per week wisely!{'\n'}
             5. Get close to say hello IRL 👋
           </Text>
         </View>
@@ -570,32 +582,39 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#fff',
   },
-  togglePaidButton: {
+  demoSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  demoLabel: {
+    fontSize: 12,
+    color: '#ff9500',
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  demoButton: {
     backgroundColor: '#333',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 8,
   },
-  togglePaidText: {
+  demoButtonText: {
     fontSize: 13,
-    color: '#6C63FF',
-    fontWeight: '600',
-  },
-  resetButton: {
-    backgroundColor: '#ff9500',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  resetButtonText: {
-    fontSize: 13,
-    color: '#fff',
+    color: '#ff9500',
     fontWeight: '600',
   },
   photoContainer: {
     alignItems: 'center',
     marginVertical: 30,
+  },
+  v1Note: {
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 8,
+    fontStyle: 'italic',
   },
   photo: {
     width: 160,

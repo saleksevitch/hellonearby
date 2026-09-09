@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { User, Geomatch, GeomatchQuota, Gender, Ethnicity, UserPreferences } from '../types';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { User, Geomatch, GeomatchQuota, Gender, Ethnicity, UserPreferences, ApplicationStatus, ApplicationData, CityCapacity } from '../types';
 import { APP_CONFIG } from './config';
+import { MOCK_CITY_CAPACITY } from '../data/mockCities';
 
 interface Profile {
   name: string;
@@ -17,8 +18,15 @@ interface Profile {
 interface AppContextType {
   profile: Profile;
   updateProfile: (profile: Partial<Profile>) => void;
-  isPaid: boolean;
-  setIsPaid: (paid: boolean) => void;
+  applicationData: ApplicationData;
+  updateApplicationData: (data: Partial<ApplicationData>) => void;
+  setApplicationStatus: (status: ApplicationStatus) => void; // for demo/testing
+  activateSubscription: () => void; // mock subscription activation
+  cityCapacities: CityCapacity[];
+  getCityCapacity: (city: string) => CityCapacity | undefined;
+  hasAvailableSeat: (city: string, gender: 'man' | 'woman') => boolean;
+  checkInactivityStatus: () => void; // check and update inactivity state
+  simulateLastActive: (daysAgo: number) => void; // demo control
   geomatches: Geomatch[];
   quota: GeomatchQuota;
   catchGeomatch: (user: User) => boolean; // returns true if caught, false if no quota
@@ -59,6 +67,32 @@ export const doFiltersMatch = (userA: Profile | User, userB: User): boolean => {
 };
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const [cityCapacities, setCityCapacities] = useState<CityCapacity[]>(MOCK_CITY_CAPACITY);
+  
+  const [applicationData, setApplicationData] = useState<ApplicationData>({
+    status: 'draft',
+    name: '',
+    dateOfBirth: new Date(1995, 0, 1),
+    isOver18: false,
+    city: '',
+    bio: '',
+    gender: 'man',
+    height: 175,
+    ethnicity: undefined,
+    preferences: {
+      ageRange: [23, 35],
+      genders: ['woman'], // v1: heterosexual only - man seeks woman
+      heightRange: [160, 185],
+      ethnicities: undefined,
+    },
+    referralCode: undefined,
+    communityStandardsAccepted: false,
+    verificationStatus: 'pending',
+    lastActiveAt: new Date(),
+    inactivityWarningShown: false,
+    isSubscribed: false,
+  });
+
   const [profile, setProfile] = useState<Profile>({
     name: 'Your Name',
     age: 28,
@@ -67,16 +101,15 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     height: 175,
     gender: 'man',
     ethnicity: 'white',
-    isDiscoverable: true,
+    isDiscoverable: false, // default off until approved + subscribed + active seat
     preferences: {
       ageRange: [23, 35],
-      genders: ['woman', 'non-binary'],
+      genders: ['woman'], // v1: heterosexual only - man seeks woman
       heightRange: [160, 185],
-      ethnicities: undefined, // no ethnicity filter
+      ethnicities: undefined,
     },
   });
 
-  const [isPaid, setIsPaid] = useState(false);
   const [geomatches, setGeomatches] = useState<Geomatch[]>([]);
   
   // Initialize quota (weekly reset)
@@ -89,13 +122,78 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
 
   const [quota, setQuota] = useState<GeomatchQuota>({
     used: 0,
-    total: APP_CONFIG.freeGeomatchesPerWeek,
+    total: APP_CONFIG.geomatchesPerWeek,
     resetTime: getResetTime(),
   });
 
   const updateProfile = (updates: Partial<Profile>) => {
     setProfile((prev) => ({ ...prev, ...updates }));
   };
+
+  const updateApplicationData = (updates: Partial<ApplicationData>) => {
+    setApplicationData((prev) => ({ ...prev, ...updates }));
+  };
+
+  const setApplicationStatus = (status: ApplicationStatus) => {
+    const now = new Date();
+    setApplicationData((prev) => ({
+      ...prev,
+      status,
+      submittedAt: status === 'submitted' || status === 'under_review' ? prev.submittedAt || now : prev.submittedAt,
+      reviewedAt: status === 'approved' || status === 'waitlisted' || status === 'declined' ? now : prev.reviewedAt,
+    }));
+  };
+
+  const getCityCapacity = (city: string): CityCapacity | undefined => {
+    return cityCapacities.find((c) => c.city === city);
+  };
+
+  const hasAvailableSeat = (city: string, gender: 'man' | 'woman'): boolean => {
+    const capacity = getCityCapacity(city);
+    if (!capacity) return false;
+    
+    if (gender === 'man') {
+      return capacity.menOccupied < capacity.menTotal;
+    } else {
+      return capacity.womenOccupied < capacity.womenTotal;
+    }
+  };
+
+  const checkInactivityStatus = () => {
+    const now = new Date();
+    const daysSinceActive = Math.floor(
+      (now.getTime() - applicationData.lastActiveAt.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (applicationData.status === 'approved') {
+      if (daysSinceActive >= 21) {
+        // Release seat and move to waitlist
+        setApplicationStatus('waitlisted');
+        setProfile((prev) => ({ ...prev, isDiscoverable: false }));
+        console.log('Inactivity: Released seat after 21 days');
+      } else if (daysSinceActive >= 14 && !applicationData.inactivityWarningShown) {
+        // Auto-pause discoverable and show warning
+        setProfile((prev) => ({ ...prev, isDiscoverable: false }));
+        setApplicationData((prev) => ({ ...prev, inactivityWarningShown: true }));
+        console.log('Inactivity: Auto-paused discoverable after 14 days');
+      }
+    }
+  };
+
+  const simulateLastActive = (daysAgo: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    setApplicationData((prev) => ({
+      ...prev,
+      lastActiveAt: date,
+      inactivityWarningShown: false,
+    }));
+  };
+
+  // Check inactivity on mount and when status changes
+  useEffect(() => {
+    checkInactivityStatus();
+  }, [applicationData.status]);
 
   const catchGeomatch = (user: User): boolean => {
     // Check if user has quota
@@ -128,28 +226,36 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     console.log(`Reported user ${userId}: ${reason}`);
   };
 
+  const activateSubscription = () => {
+    setApplicationData((prev) => ({
+      ...prev,
+      isSubscribed: true,
+      subscriptionActivatedAt: new Date(),
+    }));
+  };
+
   const resetQuota = () => {
-    const newTotal = isPaid ? APP_CONFIG.paidGeomatchesPerWeek : APP_CONFIG.freeGeomatchesPerWeek;
     setQuota({
       used: 0,
-      total: newTotal,
+      total: APP_CONFIG.geomatchesPerWeek,
       resetTime: getResetTime(),
     });
   };
-
-  // Update quota total when isPaid changes
-  React.useEffect(() => {
-    const newTotal = isPaid ? APP_CONFIG.paidGeomatchesPerWeek : APP_CONFIG.freeGeomatchesPerWeek;
-    setQuota((prev) => ({ ...prev, total: newTotal }));
-  }, [isPaid]);
 
   return (
     <AppContext.Provider
       value={{
         profile,
         updateProfile,
-        isPaid,
-        setIsPaid,
+        applicationData,
+        updateApplicationData,
+        setApplicationStatus,
+        activateSubscription,
+        cityCapacities,
+        getCityCapacity,
+        hasAvailableSeat,
+        checkInactivityStatus,
+        simulateLastActive,
         geomatches,
         quota,
         catchGeomatch,
