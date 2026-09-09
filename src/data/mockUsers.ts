@@ -1,6 +1,6 @@
-import { User } from '../types';
+import { User, Gender, Ethnicity } from '../types';
 
-// Mock nearby users for swipe screen
+// Mock nearby users for radar/geomatch
 export const MOCK_NEARBY_USERS: User[] = [
   {
     id: '1',
@@ -8,7 +8,17 @@ export const MOCK_NEARBY_USERS: User[] = [
     age: 28,
     bio: 'Love hiking and coffee. Always up for spontaneous adventures! 🏔️',
     photoUrl: 'https://picsum.photos/seed/alex/400/600',
-    distance: 320, // mocked distance in meters
+    height: 175,
+    gender: 'woman' as Gender,
+    ethnicity: 'asian' as Ethnicity,
+    distance: 320,
+    isDiscoverable: true,
+    preferences: {
+      ageRange: [25, 35],
+      genders: ['man', 'non-binary'],
+      heightRange: [165, 195],
+      ethnicities: undefined,
+    },
   },
   {
     id: '2',
@@ -16,7 +26,16 @@ export const MOCK_NEARBY_USERS: User[] = [
     age: 26,
     bio: 'Photographer by day, musician by night. Let\'s explore the city together! 📸',
     photoUrl: 'https://picsum.photos/seed/jordan/400/600',
+    height: 182,
+    gender: 'man' as Gender,
+    ethnicity: 'black' as Ethnicity,
     distance: 450,
+    isDiscoverable: true,
+    preferences: {
+      ageRange: [23, 32],
+      genders: ['woman'],
+      heightRange: [160, 180],
+    },
   },
   {
     id: '3',
@@ -24,7 +43,16 @@ export const MOCK_NEARBY_USERS: User[] = [
     age: 30,
     bio: 'Foodie, dog lover, and eternal optimist. Big fan of spontaneous plans.',
     photoUrl: 'https://picsum.photos/seed/sam/400/600',
+    height: 168,
+    gender: 'non-binary' as Gender,
+    ethnicity: 'white' as Ethnicity,
     distance: 280,
+    isDiscoverable: true,
+    preferences: {
+      ageRange: [25, 35],
+      genders: ['man', 'woman', 'non-binary'],
+      heightRange: [160, 190],
+    },
   },
   {
     id: '4',
@@ -32,7 +60,16 @@ export const MOCK_NEARBY_USERS: User[] = [
     age: 27,
     bio: 'Runner, reader, and coffee enthusiast. Always looking for new book recommendations.',
     photoUrl: 'https://picsum.photos/seed/taylor/400/600',
+    height: 178,
+    gender: 'woman' as Gender,
+    ethnicity: 'hispanic' as Ethnicity,
     distance: 520,
+    isDiscoverable: false, // not discoverable - won't show on radar
+    preferences: {
+      ageRange: [25, 32],
+      genders: ['man'],
+      heightRange: [175, 195],
+    },
   },
   {
     id: '5',
@@ -40,6 +77,33 @@ export const MOCK_NEARBY_USERS: User[] = [
     age: 29,
     bio: 'Art gallery hopper and weekend brunch expert. Let\'s meet up! 🎨',
     photoUrl: 'https://picsum.photos/seed/casey/400/600',
+    height: 172,
+    gender: 'woman' as Gender,
+    ethnicity: 'mixed' as Ethnicity,
     distance: 390,
+    isDiscoverable: true,
+    preferences: {
+      ageRange: [27, 35],
+      genders: ['man', 'woman'],
+      heightRange: [170, 190],
+      ethnicities: ['white', 'mixed', 'hispanic'],
+    },
+  },
+  {
+    id: '6',
+    name: 'Morgan',
+    age: 31,
+    bio: 'Tech enthusiast and yoga lover. Looking for genuine connections.',
+    photoUrl: 'https://picsum.photos/seed/morgan/400/600',
+    height: 185,
+    gender: 'man' as Gender,
+    ethnicity: 'white' as Ethnicity,
+    distance: 410,
+    isDiscoverable: true,
+    preferences: {
+      ageRange: [25, 35],
+      genders: ['woman', 'non-binary'],
+      heightRange: [155, 180],
+    },
   },
 ];

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import ProfileScreen from '../screens/ProfileScreen';
-import SwipeScreen from '../screens/SwipeScreen';
+import RadarScreen from '../screens/RadarScreen';
 import MatchesScreen from '../screens/MatchesScreen';
 import { MainTabParamList } from './types';
 
@@ -20,20 +20,20 @@ export default function MainTabs() {
       }}
     >
       <Tab.Screen
-        name="Swipe"
-        component={SwipeScreen}
+        name="Radar"
+        component={RadarScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Text style={[styles.tabIcon, { color }]}>💫</Text>
+            <Text style={[styles.tabIcon, { color }]}>📡</Text>
           ),
         }}
       />
       <Tab.Screen
-        name="Matches"
+        name="Geomatches"
         component={MatchesScreen}
         options={{
           tabBarIcon: ({ color }) => (
-            <Text style={[styles.tabIcon, { color }]}>💬</Text>
+            <Text style={[styles.tabIcon, { color }]}>✨</Text>
           ),
         }}
       />
