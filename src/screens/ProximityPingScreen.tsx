@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Animated,
   Alert,
+  Platform,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { useApp } from '../utils/AppContext';

@@ -8,6 +8,7 @@ import {
   Animated,
   Dimensions,
   Alert,
+  Platform,
 } from 'react-native';
 import { useApp } from '../utils/AppContext';
 import { MOCK_NEARBY_USERS } from '../data/mockUsers';
